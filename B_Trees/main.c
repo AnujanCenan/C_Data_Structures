@@ -52,8 +52,6 @@ struct B_Tree_Key_Node_Pair
 };
 
 
-
-
 void print_indent(int generation)
 {
     for (int i = 0; i < generation; ++i)
@@ -70,13 +68,13 @@ void print_node(B_Tree_Node* node, int generation)
 
     print_indent(generation);
 
-    while (curr->next)        // while the curr->next is not tail
+    while (curr->next)
     {
         printf("%d --> ", curr->key);
         curr = curr->next;
     }
 
-    printf("%d -- num_keys=%d\n", curr->key, node->num_keys);      // after termination, curr points to the key BEFORE the tail key
+    printf("%d -- num_keys=%d\n", curr->key, node->num_keys);
 
     curr = node->head;
     while (curr)
@@ -84,8 +82,6 @@ void print_node(B_Tree_Node* node, int generation)
         print_node(curr->child, generation + 1);
         curr = curr->next;
     }
-
-    // print_node(node->greater_than_child, generation + 1);
 }
 
 void print_tree(B_Tree* tree)
@@ -139,7 +135,7 @@ void b_tree_node_insert(B_Tree_Node* node, B_Tree_Key* new_key)
 
     int key = new_key->key;
     
-    while (!curr_key->is_tail)      // instead of saying while curr_key, we say while curr_key is not the tail piece
+    while (!curr_key->is_tail)
     {
         if (curr_key->key > key)
         {
@@ -178,7 +174,6 @@ void b_tree_node_insert(B_Tree_Node* node, B_Tree_Key* new_key)
 B_Tree_Node* b_tree_node_split(B_Tree_Node* node, B_Tree_Key* parent_key, B_Tree_Node* parent_node, B_Tree* tree)
 {
     // Node can be a leaf node OR a parent node, we don't know, we are just splitting
-
     // Assumption is that node->num_keys == MAX_KEYS + 1
     int keys_left_side = MAX_KEYS / 2;
 
@@ -216,15 +211,11 @@ B_Tree_Node* b_tree_node_split(B_Tree_Node* node, B_Tree_Key* parent_key, B_Tree
     if (!parent_key)
     {
         B_Tree_Node* new_root = b_tree_node_init(median);
-        // parent_node = malloc(sizeof(B_Tree_Node));
-        // parent_node->head = NULL;
-        // parent_node->num_keys = 0;
         new_root->tail->child = node;
         new_root->is_leaf = false;
         tree->root = new_root;
         return new_root;
     } else {
-        // b_tree_node_insert(parent_node, median);
         median->next = parent_key;
         median->prev = parent_key->prev;
 
@@ -260,14 +251,12 @@ void b_tree_insert(B_Tree* tree, int key)
 
         tree->root = b_tree_node_init(new_key);
         tree->root->is_leaf = true;
-        
-        // tree->root->greater_than_child = NULL;
 
         tree->num_nodes = 1;
         tree->num_keys = 1;
         return;
     }
-    // Find the leaf node
+
     B_Tree_Node* curr_node = tree->root;
 
     B_Tree_KN_Stack* stack = B_Tree_KN_Stack_init(10);
@@ -275,7 +264,7 @@ void b_tree_insert(B_Tree* tree, int key)
     while (!curr_node->is_leaf)
     {
         B_Tree_Key* curr_key = curr_node->head;
-        while (!curr_key->is_tail)      // instead of saying while curr_key, we say while curr_key is not the tail 
+        while (!curr_key->is_tail)
         {
             if (curr_key->key == key) return;
             if (curr_key->key > key)
@@ -292,7 +281,7 @@ void b_tree_insert(B_Tree* tree, int key)
         if (curr_key->is_tail) 
         {
             B_Tree_Key_Node_Pair* pair = b_tree_kn_pair_init(curr_node, curr_key);
-            curr_node = curr_key->child;     // it is this tail key that holds the greater than pointer now
+            curr_node = curr_key->child;
             B_Tree_KN_Stack_append(stack, pair);
         }
     }
@@ -309,7 +298,6 @@ void b_tree_insert(B_Tree* tree, int key)
             parent_node = parent_pair->node;
             parent_key = parent_pair->key;
         }
-        // B_Tree_Key_Node_Pair* parent = stack->size > 0 ? stack->data[stack->size - 1] : NULL;
 
         parent_node = b_tree_node_split(curr_node, parent_key, parent_node, tree);
         free(parent_pair);
@@ -333,7 +321,6 @@ void b_tree_node_free(B_Tree_Node* node)
         free(prev);
     }
 
-    // b_tree_node_free(node->greater_than_child);      // no need to do this anymore, the above while loop will free all keys including the tail keys
     free(node);
 }
 
