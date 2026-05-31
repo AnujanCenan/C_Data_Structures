@@ -4,9 +4,6 @@
 
 #include "dynamic_array.h"
 
-#define MAX_KEYS 4
-#define MIN_KEYS MAX_KEYS / 2
-
 
 typedef struct B_Tree_Key B_Tree_Key;
 typedef struct B_Tree_Node B_Tree_Node;
@@ -36,8 +33,8 @@ struct B_Tree_Node
 struct B_Tree
 {
     B_Tree_Node* root;
-    int num_nodes;
-    int num_keys;
+    int max_keys;
+    int min_keys;
 };
 
 
@@ -88,12 +85,12 @@ void print_tree(B_Tree* tree)
 }
 
 
-B_Tree* b_tree_init()
+B_Tree* b_tree_init(int max_keys)
 {
     B_Tree* tree = malloc(sizeof(B_Tree));
-    tree->num_keys = 0;
-    tree->num_nodes = 0;
     tree->root = NULL;
+    tree->max_keys = max_keys;
+    tree->min_keys = max_keys / 2;
     return tree;
 }
 
@@ -171,7 +168,7 @@ B_Tree_Node* b_tree_node_split(B_Tree_Node* node, B_Tree_Key* parent_key, B_Tree
 {
     // Node can be a leaf node OR a parent node, we don't know, we are just splitting
     // Assumption is that node->num_keys == MAX_KEYS + 1
-    int keys_left_side = MAX_KEYS / 2;
+    int keys_left_side = tree->min_keys;
 
     B_Tree_Key* median = node->head;
     B_Tree_Key* prev = NULL;
@@ -188,7 +185,7 @@ B_Tree_Node* b_tree_node_split(B_Tree_Node* node, B_Tree_Key* parent_key, B_Tree
     left_split->is_leaf = true;
     left_split->tail = b_tree_key_init(0, true);
     // left_split->greater_than_child = NULL;
-    left_split->num_keys = MAX_KEYS / 2;
+    left_split->num_keys = keys_left_side;
     
     prev->next = left_split->tail;
     left_split->tail->prev = prev;
@@ -247,9 +244,6 @@ void b_tree_insert(B_Tree* tree, int key)
 
         tree->root = b_tree_node_init(new_key);
         tree->root->is_leaf = true;
-
-        tree->num_nodes = 1;
-        tree->num_keys = 1;
         return;
     }
 
@@ -284,7 +278,7 @@ void b_tree_insert(B_Tree* tree, int key)
     B_Tree_Key* new_key = b_tree_key_init(key, false);
     b_tree_node_insert(curr_node, new_key);
     
-    while (curr_node->num_keys > MAX_KEYS)
+    while (curr_node->num_keys > tree->max_keys)
     { 
         B_Tree_Key_Node_Pair* parent_pair = stack->size > 0 ? stack->data[stack->size - 1] : NULL;
         B_Tree_Node* parent_node = NULL;
@@ -435,7 +429,7 @@ void b_tree_delete_fixup(
         }
 
 
-        if (sibling->num_keys >= MIN_KEYS + 1)
+        if (sibling->num_keys >= tree->min_keys + 1)
         {
             remove_key(sibling, sibling_key);
 
@@ -475,7 +469,7 @@ void b_tree_delete_fixup(
                 return;
             }
 
-            if (parent_node != tree->root && parent_node->num_keys < MIN_KEYS)
+            if (parent_node != tree->root && parent_node->num_keys < tree->min_keys)
             {
                 b_tree_delete_fixup(parent_node, after_separator, NULL, NULL, merged_node, tree);
             } else
@@ -495,7 +489,7 @@ void b_tree_delete_fixup(
             insert_key_before_key(deletion_node, new_parent, del_location);
             new_parent->child = left_child;
 
-            if (left_child->num_keys < MIN_KEYS)
+            if (left_child->num_keys < tree->min_keys)
                 b_tree_delete_fixup(left_child, left_child->tail, deletion_node, new_parent, new_parent_old_child, tree);
         } else
         {
@@ -505,7 +499,7 @@ void b_tree_delete_fixup(
             insert_key_before_key(deletion_node, new_parent, del_location);
             new_parent->child = left_child;
 
-            if (right_child->num_keys < MIN_KEYS)
+            if (right_child->num_keys < tree->min_keys)
                 b_tree_delete_fixup(right_child, right_child->head, deletion_node, new_parent->next, new_parent_old_child, tree);
         }
 
@@ -559,7 +553,7 @@ void b_tree_delete(B_Tree* tree, int key)
     free(curr_key);
     curr_node->num_keys--;
 
-    if (curr_node->num_keys < MIN_KEYS)
+    if (curr_node->num_keys < tree->min_keys)
         b_tree_delete_fixup(curr_node, del_location, parent_node, parent_key, child_node, tree);
 }
 
@@ -589,7 +583,7 @@ void b_tree_free(B_Tree* tree)
 int main()
 {
 
-    B_Tree* b_tree = b_tree_init();
+    B_Tree* b_tree = b_tree_init(4);        // setting max_keys to be 4
 
     b_tree_insert(b_tree, 9);
     b_tree_insert(b_tree, 15);
