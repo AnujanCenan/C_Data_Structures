@@ -301,6 +301,13 @@ void b_tree_insert(B_Tree* tree, int key)
         curr_node = parent_node;
     }
 
+    // freeing the remainder of the K-N stack
+    while (stack->size > 0)
+    {
+        free(stack->data[stack->size - 1]);
+        B_Tree_KN_Stack_pop(stack);
+    }
+
     B_Tree_KN_Stack_free(stack);
 }
 
